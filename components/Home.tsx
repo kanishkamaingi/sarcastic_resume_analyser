@@ -56,12 +56,35 @@ export default function Home() {
     }
   };
   
-  const handleSubmit = () => {
-    console.log({
-      resume: file,
-      jobDescription: jobDescription
-    });
+  const handleSubmit = async () => {
+    if (!file || !jobDescription.trim()) {
+      alert("Please upload a resume and paste a job description.");
+      return;
+    }
+  
+    const formData = new FormData();
+    formData.append("resume", file);
+    formData.append("jobDescription", jobDescription);
+  
+    try {
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        body: formData,
+      });
+  
+      const data = await response.json();
+      console.log("API Response:", data);
+  
+      // Show result (you can store it in a state to render later)
+      alert(
+        `Match: ${data.matchPercentage}%\n\nFeedback:\n- ${data.sarcasticFeedback.join("\n- ")}`
+      );
+    } catch (error) {
+      console.error("Submission error:", error);
+      alert("Something went wrong. Please try again.");
+    }
   };
+  
 
 
 
