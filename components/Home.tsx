@@ -2,9 +2,13 @@
 'use client'
 import { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
+
+
 import Head from 'next/head';
 
 export default function Home() {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [analysisResult, setAnalysisResult] = useState<{
     matchPercentage: number;
@@ -71,19 +75,31 @@ export default function Home() {
     formData.append("resume", file);
     formData.append("jobDescription", jobDescription);
   
+    setLoading(true);
+    setError('');
+    setAnalysisResult(null);
+  
     try {
       const response = await fetch("/api/analyze", {
         method: "POST",
         body: formData,
       });
   
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Unknown error");
+      }
+  
       const data = await response.json();
-      setAnalysisResult(data); // Show results in UI
-    } catch (error) {
+      setAnalysisResult(data);
+    } catch (error: any) {
       console.error("Submission error:", error);
-      alert("Something went wrong. Please try again.");
+      setError(error.message || "Something went wrong");
+    } finally {
+      setLoading(false);
     }
   };
+  
   
 
 
@@ -283,12 +299,16 @@ export default function Home() {
           transition={{ duration: 0.5, delay: 0.8 }}
         >
           <motion.button
-            className="px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold text-xl relative overflow-hidden"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={handleSubmit}
-          >
-            <span className="relative z-10">Analyze Compatibility</span>
+  className="px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold text-xl relative overflow-hidden disabled:opacity-50"
+  whileHover={{ scale: loading ? 1 : 1.05 }}
+  whileTap={{ scale: 0.95 }}
+  onClick={handleSubmit}
+  disabled={loading}
+>
+  <span className="relative z-10">
+    {loading ? "Analyzing..." : "Analyze Compatibility"}
+  </span>
+
             <motion.div
               className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600"
               initial={{ x: '-100%' }}
@@ -298,6 +318,25 @@ export default function Home() {
             <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-200"></div>
           </motion.button>
         </motion.div>
+        {loading && (
+  <motion.div 
+    className="mt-8 text-center text-purple-400 font-semibold"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+  >
+    Analyzing your resume... sharpening sarcasm 🧐
+  </motion.div>
+)}
+{error && (
+  <motion.div 
+    className="mt-4 text-center text-red-400 font-medium"
+    initial={{ opacity: 0 }}
+    animate={{ opacity: 1 }}
+  >
+    Oops! {error}
+  </motion.div>
+)}
+
         {analysisResult && (
   <motion.div
     className="mt-12 max-w-3xl mx-auto bg-gray-900 bg-opacity-70 rounded-xl p-6 border border-purple-700"
