@@ -6,6 +6,11 @@ import Head from 'next/head';
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<{
+    matchPercentage: number;
+    sarcasticFeedback: string[];
+  } | null>(null);
+  
   const [dragActive, setDragActive] = useState(false);
   const [jobDescription, setJobDescription] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -73,12 +78,7 @@ export default function Home() {
       });
   
       const data = await response.json();
-      console.log("API Response:", data);
-  
-      // Show result (you can store it in a state to render later)
-      alert(
-        `Match: ${data.matchPercentage}%\n\nFeedback:\n- ${data.sarcasticFeedback.join("\n- ")}`
-      );
+      setAnalysisResult(data); // Show results in UI
     } catch (error) {
       console.error("Submission error:", error);
       alert("Something went wrong. Please try again.");
@@ -298,7 +298,24 @@ export default function Home() {
             <div className="absolute -inset-1 bg-gradient-to-r from-purple-600 to-blue-600 rounded-xl blur opacity-30 group-hover:opacity-100 transition duration-200"></div>
           </motion.button>
         </motion.div>
-        
+        {analysisResult && (
+  <motion.div
+    className="mt-12 max-w-3xl mx-auto bg-gray-900 bg-opacity-70 rounded-xl p-6 border border-purple-700"
+    initial={{ opacity: 0, y: 30 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay: 0.2 }}
+  >
+    <h2 className="text-2xl font-bold text-purple-400 mb-4">
+      Analysis Result: {analysisResult.matchPercentage}% Match
+    </h2>
+    <ul className="list-disc list-inside space-y-2 text-gray-300">
+      {analysisResult.sarcasticFeedback.map((line, idx) => (
+        <li key={idx}>{line}</li>
+      ))}
+    </ul>
+  </motion.div>
+)}
+
         <motion.div 
           className="mt-8 text-center text-gray-500 text-sm italic"
           initial={{ opacity: 0 }}
